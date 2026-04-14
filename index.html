@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clear Home</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --rose:#C8A4A4; --rose-l:#E8D5D5; --rose-p:#F7EEEE;
+  --sage:#A8B5A0; --sage-l:#D4DDD0; --sage-p:#EDF0EB;
+  --lav:#B8ADCF;  --lav-l:#DDD8EE;  --lav-p:#F2F0F8;
+  --mist:#C4C9D4; --mist-l:#E8EBF0;
+  --amber:#C9A96E; --amber-p:#F8F1E6;
+  --cream:#FAF8F5; --ink:#2D2926; --soft:#5C5450; --muted:#9B9490; --white:#fff;
+}
+html,body { height:100%; font-family:"DM Sans",sans-serif; background:var(--cream); color:var(--ink); }
+.app { min-height:100vh; display:flex; flex-direction:column; }
+
+/* HEADER */
+header { background:var(--white); border-bottom:1px solid var(--rose-l); padding:18px 24px 0; }
+.header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.logo { font-family:"Cormorant Garamond",serif; font-size:21px; font-weight:400; letter-spacing:.04em; }
+.logo em { color:var(--rose); font-style:italic; }
+.header-right { display:flex; align-items:center; gap:10px; }
+.progress-pill { font-size:11px; font-weight:500; letter-spacing:.07em; text-transform:uppercase; color:var(--rose); background:var(--rose-p); padding:4px 11px; border-radius:20px; }
+.bags-btn { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); background:none; border:1.5px solid var(--mist-l); border-radius:20px; padding:4px 10px; cursor:pointer; font-family:"DM Sans",sans-serif; transition:all .18s; }
+.bags-btn:hover { border-color:var(--amber); color:var(--amber); }
+.bags-count { font-weight:600; color:var(--amber); }
+
+/* FILTER BAR — single compact row */
+.filter-bar { display:flex; gap:6px; flex-wrap:wrap; padding:12px 0 14px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.filter-bar::-webkit-scrollbar { display:none; }
+.fb-divider { width:1px; background:var(--mist-l); flex-shrink:0; margin:2px 2px; }
+.fb-btn {
+  padding:6px 12px; border-radius:20px; border:1.5px solid var(--mist-l); background:var(--white);
+  font-family:"DM Sans",sans-serif; font-size:12px; color:var(--soft); cursor:pointer;
+  transition:all .18s; white-space:nowrap; flex-shrink:0;
+}
+.fb-btn.active { border-color:var(--rose); background:var(--rose-p); color:var(--ink); font-weight:500; }
+.fb-btn.time-active { border-color:var(--lav); background:var(--lav-p); color:var(--ink); font-weight:500; }
+
+/* PROGRESS BAR */
+.prog-track { height:2px; background:var(--mist-l); }
+.prog-fill { height:100%; background:linear-gradient(90deg,var(--rose),var(--lav)); transition:width .6s ease; }
+
+/* MAIN */
+main { flex:1; overflow-y:auto; padding:20px 24px; max-width:760px; margin:0 auto; width:100%; }
+.slabel { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; font-weight:500; }
+
+/* TASK GRID */
+.task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+
+.tcard {
+  background:var(--white); border-radius:16px; padding:16px; cursor:pointer;
+  border:1.5px solid transparent; transition:all .18s; position:relative; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+.tcard:hover { border-color:var(--rose-l); box-shadow:0 4px 18px rgba(45,41,38,.07); transform:translateY(-2px); }
+.tcard.done-card { opacity:.5; }
+.tcard.done-card::after {
+  content:"done"; position:absolute; top:10px; right:10px; font-size:10px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--sage); font-weight:500; background:var(--sage-p);
+  padding:2px 7px; border-radius:10px;
+}
+
+/* card effort badge */
+.tcard-effort {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10px; font-weight:500; letter-spacing:.05em; text-transform:uppercase;
+  padding:3px 8px; border-radius:10px; margin-bottom:10px; width:fit-content;
+}
+.effort-quick  { background:#EDF0EB; color:#7A9E73; }
+.effort-focus  { background:#F2F0F8; color:#9089BA; }
+.effort-deep   { background:#F8F1E6; color:#B08A50; }
+
+.tcard-icon { font-size:20px; margin-bottom:6px; }
+.tcard-room { font-size:10px; color:var(--muted); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
+.tcard-title { font-family:"Cormorant Garamond",serif; font-size:16px; line-height:1.3; color:var(--ink); flex:1; margin-bottom:10px; }
+.tcard-hint { font-size:11px; color:var(--muted); line-height:1.4; margin-bottom:10px; font-style:italic; }
+.tcard-bottom { display:flex; align-items:center; justify-content:space-between; margin-top:auto; }
+.tcard-time { font-size:11px; color:var(--muted); }
+.tcard-time.edited { color:var(--lav); }
+
+/* section toggles */
+.section-toggle { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; cursor:pointer; }
+.section-toggle .slabel { margin-bottom:0; }
+.section-toggle-icon { font-size:12px; color:var(--muted); transition:transform .2s; }
+.section-toggle-icon.open { transform:rotate(180deg); }
+
+/* done section */
+.done-section { margin-top:28px; }
+
+.no-tasks { text-align:center; padding:40px 20px; color:var(--muted); font-size:14px; line-height:1.8; }
+.no-tasks .nt-icon { font-size:36px; margin-bottom:10px; }
+.no-tasks .nt-sub { font-size:12px; margin-top:8px; }
+
+/* ALL DONE banner */
+.all-done-banner {
+  background:var(--sage-p); border:1.5px solid var(--sage-l); border-radius:18px;
+  padding:32px 24px; text-align:center;
+}
+.all-done-banner .adb-emoji { font-size:44px; margin-bottom:12px; }
+.all-done-banner .adb-title { font-family:"Cormorant Garamond",serif; font-size:26px; margin-bottom:8px; }
+.all-done-banner .adb-sub { font-size:13px; color:var(--soft); line-height:1.7; }
+
+/* SHEET */
+.detail-overlay {
+  position:fixed; inset:0; background:rgba(45,41,38,.32); backdrop-filter:blur(4px);
+  z-index:50; display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .22s;
+}
+.detail-overlay.open { opacity:1; pointer-events:all; }
+.detail-sheet {
+  background:var(--white); border-radius:24px 24px 0 0; padding:24px 24px 32px;
+  width:100%; max-width:760px; max-height:90vh; overflow-y:auto;
+  transform:translateY(32px); transition:transform .28s ease;
+}
+.detail-overlay.open .detail-sheet { transform:translateY(0); }
+.sheet-handle { width:36px; height:4px; background:var(--mist-l); border-radius:4px; margin:0 auto 18px; }
+
+/* sheet header */
+.sheet-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:6px; }
+.sheet-header-left { flex:1; }
+.sheet-room-row { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); letter-spacing:.07em; text-transform:uppercase; margin-bottom:8px; }
+.sheet-title { font-family:"Cormorant Garamond",serif; font-size:24px; line-height:1.25; }
+
+/* time editor — prominent */
+.time-editor {
+  display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0;
+  background:var(--lav-p); border:1.5px solid var(--lav-l); border-radius:14px; padding:10px 12px;
+  min-width:72px;
+}
+.time-editor-label { font-size:9px; letter-spacing:.09em; text-transform:uppercase; color:var(--lav); font-weight:500; }
+.time-editor-val { font-size:18px; font-weight:500; color:var(--ink); line-height:1; }
+.time-editor-unit { font-size:10px; color:var(--muted); }
+.time-editor-btns { display:flex; gap:6px; margin-top:2px; }
+.time-editor-btns button {
+  width:24px; height:24px; border-radius:50%; border:1.5px solid var(--lav-l);
+  background:var(--white); font-size:14px; color:var(--lav); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:all .15s;
+  font-family:"DM Sans",sans-serif; line-height:1;
+}
+.time-editor-btns button:hover { background:var(--lav-p); border-color:var(--lav); }
+
+.sheet-desc { font-size:13px; color:var(--soft); line-height:1.75; margin:14px 0 18px; }
+
+/* keep box */
+.keep-box { background:var(--lav-p); border:1.5px solid var(--lav-l); border-radius:14px; padding:14px 16px; margin-bottom:18px; }
+.keep-box-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--lav); font-weight:500; margin-bottom:8px; }
+.keep-items { display:flex; flex-direction:column; gap:6px; }
+.keep-item { font-size:13px; color:var(--soft); line-height:1.5; display:flex; gap:8px; }
+.keep-item::before { content:"✦"; color:var(--lav); font-size:9px; margin-top:4px; flex-shrink:0; }
+
+/* hesitation tip */
+.hesitation-tip {
+  background:var(--amber-p); border-left:3px solid var(--amber); border-radius:0 10px 10px 0;
+  padding:10px 14px; margin-bottom:18px; font-size:12px; color:var(--soft); line-height:1.6;
+}
+.hesitation-tip strong { color:var(--amber); display:block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:3px; }
+
+/* steps */
+.sheet-steps-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; font-weight:500; }
+.sheet-steps { list-style:none; margin-bottom:20px; }
+.sheet-steps li {
+  display:flex; align-items:flex-start; gap:12px; padding:10px 0;
+  border-bottom:1px solid var(--rose-p); font-size:13px; color:var(--soft);
+  line-height:1.55; cursor:pointer; transition:color .15s;
+}
+.sheet-steps li:last-child { border-bottom:none; }
+.sheet-steps li.sdone { color:var(--muted); text-decoration:line-through; }
+.scheck {
+  width:20px; height:20px; border-radius:50%; border:1.5px solid var(--rose-l);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;
+  font-size:10px; transition:all .18s;
+}
+.sheet-steps li.sdone .scheck { background:var(--sage); border-color:var(--sage); color:var(--white); }
+
+/* action buttons */
+.btn-complete {
+  width:100%; padding:14px; border:none; border-radius:14px; cursor:pointer;
+  font-family:"DM Sans",sans-serif; font-size:14px; font-weight:500; letter-spacing:.03em;
+  background:linear-gradient(135deg,var(--rose),var(--lav)); color:var(--white); transition:opacity .2s,transform .1s;
+  margin-bottom:8px;
+}
+.btn-complete:hover { opacity:.9; transform:translateY(-1px); }
+.btn-complete:active { transform:translateY(0); }
+.btn-anyway {
+  width:100%; padding:11px; border:1.5px solid var(--mist-l); border-radius:12px;
+  background:transparent; font-family:"DM Sans",sans-serif; font-size:12px; color:var(--muted); cursor:pointer;
+  margin-bottom:8px; transition:all .15s;
+}
+.btn-anyway:hover { border-color:var(--sage-l); color:var(--sage); }
+.btn-close {
+  width:100%; padding:11px; border:1.5px solid var(--mist-l); border-radius:12px;
+  background:transparent; font-family:"DM Sans",sans-serif; font-size:12px; color:var(--muted); cursor:pointer;
+}
+
+/* bags modal */
+.bags-overlay {
+  position:fixed; inset:0; background:rgba(45,41,38,.35); backdrop-filter:blur(4px);
+  z-index:60; display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .22s;
+}
+.bags-overlay.open { opacity:1; pointer-events:all; }
+.bags-card {
+  background:var(--white); border-radius:24px; padding:32px 28px; width:90%; max-width:340px;
+  text-align:center; box-shadow:0 8px 40px rgba(45,41,38,.12);
+  animation:floatIn .3s ease;
+}
+.bags-emoji { font-size:44px; margin-bottom:12px; }
+.bags-title { font-family:"Cormorant Garamond",serif; font-size:22px; margin-bottom:6px; }
+.bags-sub { font-size:13px; color:var(--muted); margin-bottom:20px; line-height:1.6; }
+.bags-counter { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:20px; }
+.bags-counter button {
+  width:40px; height:40px; border-radius:50%; border:1.5px solid var(--mist-l); background:var(--white);
+  font-size:20px; cursor:pointer; color:var(--soft); display:flex; align-items:center; justify-content:center;
+  font-family:"DM Sans",sans-serif; transition:all .15s;
+}
+.bags-counter button:hover { border-color:var(--amber); color:var(--amber); }
+.bags-num { font-family:"Cormorant Garamond",serif; font-size:48px; color:var(--amber); line-height:1; min-width:60px; }
+.bags-unit { font-size:12px; color:var(--muted); margin-top:4px; }
+.btn-bags-close { padding:11px 28px; background:var(--ink); color:var(--white); border:none; border-radius:12px; font-family:"DM Sans",sans-serif; font-size:13px; cursor:pointer; }
+
+/* celebration */
+.cel-overlay {
+  position:fixed; inset:0; background:rgba(250,248,245,.9); backdrop-filter:blur(8px);
+  z-index:100; display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .28s;
+}
+.cel-overlay.show { opacity:1; pointer-events:all; }
+.cel-card {
+  background:var(--white); border-radius:24px; padding:44px 32px; text-align:center;
+  box-shadow:0 8px 40px rgba(45,41,38,.12); max-width:320px; width:90%;
+  animation:floatIn .35s ease;
+}
+@keyframes floatIn { from{transform:translateY(18px);opacity:0} to{transform:translateY(0);opacity:1} }
+.cel-emoji { font-size:48px; margin-bottom:12px; }
+.cel-title { font-family:"Cormorant Garamond",serif; font-size:24px; margin-bottom:6px; }
+.cel-sub { font-size:13px; color:var(--muted); margin-bottom:22px; line-height:1.65; }
+.btn-cel { padding:12px 28px; background:linear-gradient(135deg,var(--rose),var(--lav)); color:var(--white); border:none; border-radius:12px; font-family:"DM Sans",sans-serif; font-size:13px; font-weight:500; cursor:pointer; }
+
+/* NAV — merged into single toggle */
+nav {
+  background:var(--white); border-top:1px solid var(--rose-l);
+  padding:10px 24px 18px; display:flex; justify-content:center;
+}
+.nav-toggle { display:flex; background:var(--cream); border-radius:14px; padding:3px; gap:2px; }
+.nav-btn {
+  padding:8px 20px; border-radius:11px; border:none; background:transparent;
+  font-family:"DM Sans",sans-serif; font-size:12px; color:var(--muted); cursor:pointer; transition:all .18s;
+  letter-spacing:.03em;
+}
+.nav-btn.active { background:var(--white); color:var(--ink); font-weight:500; box-shadow:0 1px 4px rgba(45,41,38,.08); }
+
+.view { display:none; }
+.view.active { display:block; }
+
+/* rooms view embedded as section */
+.rooms-list { display:flex; flex-direction:column; gap:8px; }
+.rcard {
+  background:var(--white); border-radius:14px; padding:14px 18px;
+  display:flex; align-items:center; gap:14px; cursor:pointer; transition:all .18s;
+}
+.rcard:hover { box-shadow:0 3px 14px rgba(45,41,38,.07); transform:translateX(2px); }
+.rcard-icon { font-size:22px; flex-shrink:0; }
+.rcard-info { flex:1; }
+.rcard-name { font-family:"Cormorant Garamond",serif; font-size:17px; margin-bottom:1px; }
+.rcard-sub { font-size:11px; color:var(--muted); }
+.rcard-ring { position:relative; width:40px; height:40px; flex-shrink:0; }
+.rcard-ring svg { transform:rotate(-90deg); }
+.rcard-pct { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:10px; font-weight:500; color:var(--soft); }
+
+@media(max-width:480px){
+  main { padding:16px 16px; }
+  .task-grid { grid-template-columns:1fr 1fr; }
+  .tcard { padding:12px; }
+  header { padding:16px 16px 0; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div class="header-top">
+    <div class="logo">clear <em>home</em></div>
+    <div class="header-right">
+      <button class="bags-btn" onclick="openBags()">
+        <span>&#x1F6CD;</span> <span class="bags-count" id="bagsCount">0</span> bags out
+      </button>
+      <div class="progress-pill" id="progPill">0 / 35</div>
+    </div>
+  </div>
+  <div class="filter-bar" id="filterBar"></div>
+  <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+</header>
+
+<main>
+  <div class="view active" id="viewPick">
+    <div class="slabel" id="resultsLabel" style="margin-bottom:14px">All tasks</div>
+    <div class="task-grid" id="taskGrid"></div>
+    <div class="done-section" id="doneSection" style="display:none">
+      <div class="section-toggle" onclick="toggleDone()">
+        <div class="slabel">Completed</div>
+        <span class="section-toggle-icon" id="doneToggleIcon">&#x25BC;</span>
+      </div>
+      <div id="doneGrid" class="task-grid"></div>
+    </div>
+  </div>
+
+  <div class="view" id="viewRooms">
+    <div class="slabel">Progress by room</div>
+    <div class="rooms-list" id="roomsList"></div>
+  </div>
+</main>
+
+<!-- Task sheet -->
+<div class="detail-overlay" id="detailOverlay" onclick="maybeCloseDetail(event)">
+  <div class="detail-sheet">
+    <div class="sheet-handle"></div>
+    <div id="sheetContent"></div>
+  </div>
+</div>
+
+<!-- Bags modal -->
+<div class="bags-overlay" id="bagsOverlay" onclick="maybeCloseBags(event)">
+  <div class="bags-card" id="bagsCard">
+    <div class="bags-emoji">&#x1F6CD;</div>
+    <div class="bags-title">Bags out the door</div>
+    <div class="bags-sub">Every bag is a decision made permanent. Track them here.</div>
+    <div class="bags-counter">
+      <button onclick="addBags(-1)">&#8722;</button>
+      <div><div class="bags-num" id="bagsNum">0</div><div class="bags-unit">bags / boxes</div></div>
+      <button onclick="addBags(1)">&#43;</button>
+    </div>
+    <button class="btn-bags-close" onclick="closeBags()">Done</button>
+  </div>
+</div>
+
+<!-- Celebration -->
+<div class="cel-overlay" id="celOverlay">
+  <div class="cel-card">
+    <div class="cel-emoji" id="celEmoji">&#x1F33F;</div>
+    <div class="cel-title" id="celTitle">Done!</div>
+    <div class="cel-sub" id="celSub">One area lighter.</div>
+    <button class="btn-cel" onclick="closeCel()">Continue</button>
+  </div>
+</div>
+
+<nav>
+  <div class="nav-toggle">
+    <button class="nav-btn active" data-view="viewPick" onclick="switchView(this)">Tasks</button>
+    <button class="nav-btn" data-view="viewRooms" onclick="switchView(this)">Rooms</button>
+  </div>
+</nav>
+</div>
+
+<script>
+var ROOMS = [
+  {id:"bedroom",   name:"Bedroom",          icon:"&#x1F6CF;&#xFE0F;", color:"#E8D5D5",stroke:"#C8A4A4"},
+  {id:"wardrobe",  name:"Walking Wardrobe", icon:"&#x1F457;",          color:"#DDD8EE",stroke:"#B8ADCF"},
+  {id:"bathroom",  name:"Main Bathroom",    icon:"&#x1F6C1;",          color:"#D4DDD0",stroke:"#A8B5A0"},
+  {id:"kids_room", name:"Kids Room",        icon:"&#x1F319;",          color:"#E8D5D5",stroke:"#C8A4A4"},
+  {id:"kitchen",   name:"Kitchen",          icon:"&#x1F373;",          color:"#D4DDD0",stroke:"#A8B5A0"},
+  {id:"pantry",    name:"Pantry",           icon:"&#x1FAD9;",          color:"#DDD8EE",stroke:"#B8ADCF"},
+  {id:"office",    name:"Office",           icon:"&#x1F4DA;",          color:"#E4E7EE",stroke:"#C4C9D4"},
+  {id:"living",    name:"Living Room",      icon:"&#x1F6CB;&#xFE0F;",  color:"#EDD8D8",stroke:"#C8A4A4"},
+  {id:"kids_play", name:"Kids Playroom",    icon:"&#x1F9F8;",          color:"#D8EEDD",stroke:"#A8B5A0"},
+  {id:"dining",    name:"Dining Room",      icon:"&#x1F3B2;",          color:"#DDE8ED",stroke:"#A8B5A0"},
+];
+
+var TASKS = [
+  {room:"bedroom",title:"Bedside table drawers",time:10,energy:"quick",
+   hint:"Tiny space, quick decisions.",
+   tip:"If you put something in a drawer and forgot it was there — it leaves.",
+   desc:"Two bedside tables hold multitudes. Time to see what is actually living there.",
+   keep:["1 book you are currently reading","1 hand cream or lip balm","1 charging cable, coiled neatly","Max 2 other items you use every single night"],
+   steps:["Empty both drawers completely onto the bed","Handle every item: does it belong on a bedside table?","Toss old receipts, dried pens, forgotten chargers, anything that puzzles you","Wipe inside drawers with a damp cloth","Collect homeless items in a basket to rehome later"]},
+
+  {room:"bedroom",title:"Bedroom shelf clear-out",time:20,energy:"focus",
+   hint:"Decision-heavy. Surfaces hold identity.",
+   tip:"If you are hesitating on an object, that hesitation is the answer.",
+   desc:"The bedroom shelf collects things that have no other home. What actually earns this space?",
+   keep:["Max 3 decorative objects you genuinely love","Books you will read within the next month only","1 small candle or plant if it brings you joy","Everything else needs a proper home elsewhere"],
+   steps:["Clear the entire shelf onto the bed or floor","For each object: is it beautiful or useful? Does it belong in a bedroom?","Remove anything that landed here by accident and find it a real home","Dust before returning only the chosen few","Step back: does it feel calm? Remove one more thing if not"]},
+
+  {room:"bedroom",title:"Bedding audit",time:30,energy:"deep",
+   hint:"Physical and decisions. Allow real time.",
+   tip:"If a set does not feel nice against skin anymore — it goes. Comfort matters.",
+   desc:"How many sets of bedding do you need? Two per bed is the answer.",
+   keep:["2 full sets per bed: duvet cover, sheet, pillowcases","1 extra blanket per person maximum","Worn or pilled sets: repurpose as cleaning cloths","No mystery pillowcases without a matching set"],
+   steps:["Pull all bedding from wardrobe or storage","Count complete sets: duvet cover, sheet, pillowcases together","Check condition: pilling, stains, worn elastic — it goes","Fold neatly — store each set inside its own pillowcase","Bag anything leaving the house now, not later"]},
+
+  {room:"wardrobe",title:"Tops — the maybe-pile method",time:30,energy:"deep",
+   hint:"Highly decision-heavy. Do not rush.",
+   tip:"If you are hesitating because it used to fit — it goes. Keep only today's body.",
+   desc:"Tops only. The full wardrobe is a multi-session project — one category at a time.",
+   keep:["Only tops that fit well right now, today","Aim for 12-15 total: 7 casual, 4-5 smart, 2-3 special","Unworn this season: it will probably stay unworn","Duplicates: keep the best one, release the rest"],
+   steps:["Pull out ALL tops onto the bed — blouses, tees, sweaters","Hold each one: does it fit? Do you feel good in it?","Try on anything not worn this season","Three piles: Keep, Donate, Repair (only if you genuinely will)","Hang keeps. Bag donations immediately and put them by the door"]},
+
+  {room:"wardrobe",title:"Bottoms and dresses",time:30,energy:"deep",
+   hint:"Same energy as tops. Decision-heavy.",
+   tip:"Keeping for a future size keeps you stuck. Dress the body you have today.",
+   desc:"Trousers, skirts, dresses — same honest approach.",
+   keep:["5-7 everyday bottoms that fit perfectly now","2-3 smart or work trousers or skirts","3-5 dresses across casual and occasion","No future-size keeping — only what fits today"],
+   steps:["Pull all bottoms and dresses out","Keep only what fits comfortably right now","Check for damage: zips, hems, waistbands","Store off-season in vacuum bags to free space","Bag donations immediately — do not let them creep back"]},
+
+  {room:"wardrobe",title:"Shoes and bags",time:25,energy:"focus",
+   hint:"Moderate decisions. Pairs make it concrete.",
+   tip:"If you reached past a bag for months without picking it up — it goes.",
+   desc:"The shoes and bags zone is often hidden chaos. Pair up, count, decide.",
+   keep:["Max 15-18 pairs of shoes: everyday, sport, smart, special","Max 8-10 bags — one per use case: work, everyday, evening, gym","Broken heels or straps: gone, not maybe-fixed","Bags not reached for in a year: let them go"],
+   steps:["Match all shoes into pairs — lone shoes go","Discard broken heels, uncomfortable shoes, and anything too worn","Go through every bag: last use? Good condition?","Clean dust or marks off anything keeping","Organise by frequency: daily at front, special at back"]},
+
+  {room:"wardrobe",title:"Accessories and jewellery",time:20,energy:"focus",
+   hint:"Moderate. Untangling is meditative.",
+   tip:"If you actively avoid wearing a piece — that is a no.",
+   desc:"Untangle, sort, let go of what you never reach for.",
+   keep:["Jewellery you actually wear: aim for 20-25 pieces","Scarves: 4-5 you genuinely wear","Belts: one per colour or style you actually use","Broken or single-earring items: let them go"],
+   steps:["Empty all jewellery and accessories storage","Untangle necklaces and find lost earring partners","Discard broken, single earrings, things you avoid wearing","Organise: daily wear visible, special occasion stored","Check scarves and belts — keep only worn in the last year"]},
+
+  {room:"wardrobe",title:"Sportswear and home wear",time:20,energy:"focus",
+   hint:"Faster decisions — comfort is clear.",
+   tip:"If it makes you feel less than great when you put it on — it goes.",
+   desc:"Leggings multiply. Time to be ruthless about the workout wardrobe.",
+   keep:["4-5 complete workout outfits (4 sessions per week)","2-3 sets of pyjamas","2-3 home or lounge outfits","Nothing stretched, pilled, or that you feel bad wearing"],
+   steps:["Collect all sportswear, loungewear, home clothes","Do you need more than 5 workout sets? Probably not","Pyjamas: 2-3 sets — worn ones become cleaning rags","Discard anything that makes you feel less than great","Fold and store: workout, sleep, home"]},
+
+  {room:"wardrobe",title:"Stored bedding and towels",time:20,energy:"focus",
+   hint:"Mainly physical — count and condition check.",
+   tip:"Rough, scratchy towels you keep for guests — they notice. Let them go.",
+   desc:"Extra bedding and towels in the wardrobe — a count and condition edit.",
+   keep:["2 full bedding sets per bed","2 bath towels per person plus 1 household spare","2 hand towels for the bathroom","Guest towels: max 2 sets total"],
+   steps:["Pull all stored towels and spare bedding out","Check: fraying, rough texture, permanent stains — these go","Count and confirm you have the right number","Fold as complete sets — easy to grab","Bag what is leaving and put it by the door today"]},
+
+  {room:"bathroom",title:"Skincare and cosmetics",time:20,energy:"focus",
+   hint:"Check dates carefully. Expired product is wasted space.",
+   tip:"If you reached around a product for months — you already voted with your hands.",
+   desc:"Expired products, duplicates, half-used things that never worked. Time to face them.",
+   keep:["Only products used in the last 3 months","Daily routine: max 6-8 products on the shelf","Weekly-use in a drawer, out of sight","Anything expired: no exceptions"],
+   steps:["Empty all cosmetics storage onto a flat surface","Check expiry dates on everything — skincare really does expire","Discard expired, duplicates, items you reached around","Organise into daily routine and occasional — two groups","Return only what fits neatly. If overcrowded, edit more"]},
+
+  {room:"bathroom",title:"Medicines and first aid",time:15,energy:"quick",
+   hint:"Quick and important. Expired meds are useless.",
+   tip:"If you are not sure if it is expired — it is expired. Let it go.",
+   desc:"A small but important zone. Expired medicine is useless and potentially harmful.",
+   keep:["Pain relief: 1 type only — paracetamol or ibuprofen","Kids medicines: current prescriptions plus 1-2 standard remedies","First aid: plasters, bandage, antiseptic, thermometer","Vitamins: only what you actually take regularly"],
+   steps:["Empty the medicine cabinet completely","Check every expiry date — no mercy","Dispose of expired medication at a pharmacy drop-off","Restock only what is genuinely missing","Organise: pain relief, kids meds, first aid, vitamins"]},
+
+  {room:"bathroom",title:"Swimwear and towels",time:15,energy:"quick",
+   hint:"Fast physical check. Sizes change fast with kids.",
+   tip:"Cracked goggles are not backup goggles — they are rubbish.",
+   desc:"Beach and pool gear, plus a final towel check.",
+   keep:["2 swimsuits per person: main and backup","Kids swimwear: 2 per child — check they still fit","Swim accessories: 1 set per person, discard cracked ones","Beach towels: 1 per person plus 1 spare"],
+   steps:["Collect all swimwear from wherever it scattered","Check condition: stretched, faded, too small for the girls","Kids gear: check fit honestly — they grow fast","Check goggles and caps for cracks or perished rubber","Store together in one bag — easy to grab for pool"]},
+
+  {room:"bathroom",title:"Hair tools and styling",time:10,energy:"quick",
+   hint:"Quick — electrical or not, very clear keep logic.",
+   tip:"A frayed cable is not a usable tool — it is a safety hazard.",
+   desc:"The drawer of tangled cables and half-broken clips.",
+   keep:["1 hairdryer that works best","1 straightener or curler if you use it regularly","Hair clips and ties: a small jar, not a drawer overflowing","Discard broken clips, perished ties, tools you reach around"],
+   steps:["Empty the hair tools drawer","Test every electrical tool: does it work? Frayed cable?","Discard duplicates — keep the best of each","Gather clips and ties and edit to a reasonable amount","Coil cables neatly and store tools accessibly"]},
+
+  {room:"kids_room",title:"Kids clothes — fit and age check",time:30,energy:"deep",
+   hint:"Do this alone. Kids will keep everything.",
+   tip:"If it does not fit today, it will not fit better next month. Let it go now.",
+   desc:"Kids grow fast. At 4 and 5 there are definitely things that no longer fit.",
+   keep:["7 everyday outfits per child — one per day is plenty","2-3 smart or occasion outfits per child","2-3 pairs of shoes per child: everyday, outdoor, smart","Anything too small: pass on, donate, sell — do not hold on"],
+   steps:["Go through clothes while kids are occupied elsewhere","Sort: Fits Now, Too Small, Stained or Damaged","Too-small items: bag immediately for passing on","Remove out-of-season clothes to free drawer space","Only keep what fits drawers without force"]},
+
+  {room:"kids_room",title:"Kids bedroom books",time:20,energy:"focus",
+   hint:"Rotate is the key insight here — less out at once.",
+   tip:"A shelf of 10 loved books gets read. A shelf of 40 gets ignored.",
+   desc:"Too many books overwhelm kids. 10-12 accessible is better than 40.",
+   keep:["10-12 books on the shelf — current favourites only","Bedtime classics and genuine favourites stay","Outgrown books: donate to a kindergarten or library","The rest go in a rotation box — not on display"],
+   steps:["Pull all books off the shelf and lay them out","Is it age-appropriate? Read in the last few months?","Set aside outgrown books to donate — bag them today","Return only 10-12 current favourites to the shelf","Store the rest in a box to rotate in later — creates novelty"]},
+
+  {room:"kids_room",title:"Kids bedding and comfort items",time:15,energy:"quick",
+   hint:"Quick physical check plus a stuffed animal edit.",
+   tip:"A stuffed animal nobody sleeps with is not a favourite — it is furniture.",
+   desc:"Spare sheets, blankets, and stuffed animals on the beds.",
+   keep:["2 full bedding sets per child","1 spare blanket per child maximum","Stuffed animals: max 3-4 per child — the real nightly favourites","Broken or unloved ones: pass on or let go"],
+   steps:["Check kids bedding: worn, pilling, unloved?","Keep 2 sets per child — one on, one spare","Collect all stuffed animals from beds and the room","Which ones do they sleep with every night? Those stay","Donate the rest — another child will love them"]},
+
+  {room:"kitchen",title:"Tupperware and containers",time:15,energy:"quick",
+   hint:"Concrete matching task — very satisfying.",
+   tip:"An orphan lid is not a lid. It is a piece of plastic taking up space.",
+   desc:"The mismatched lid problem. Classic. Match them all, release the orphans.",
+   keep:["8-10 containers total — enough for meal prep","Every container must have a matching lid — orphans go","No cracked, stained beyond saving, or warped ones","Same size x3: keep 2 maximum"],
+   steps:["Empty the entire container cabinet","Match every lid to a base — orphans go immediately","Discard cracked, warped, or permanently stained","Keep 8-10 that stack or nest efficiently","Store lids vertically — easy to find"]},
+
+  {room:"kitchen",title:"Utensils and gadgets",time:20,energy:"focus",
+   hint:"The hardest kitchen task. Good intentions live here.",
+   tip:"If you are explaining to yourself why you might use it someday — it goes.",
+   desc:"The melon baller. The spiralizer you used once. Honest answers only.",
+   keep:["1 of each utensil type — not 4 wooden spoons","Gadgets used at least monthly: keep","Gadgets used once or twice ever: let go","Drawer space is valuable — if it does not earn its place, it goes"],
+   steps:["Empty the utensil drawers and gadget cabinet","Each item: when did you last use it? Really?","Duplicates: keep the best one, release the rest","Broken, rusted, warped: bin immediately","Return only what earns its space. Leave breathing room"]},
+
+  {room:"kitchen",title:"Mugs, glasses, and plates",time:15,energy:"quick",
+   hint:"Counting is key — the number is the decision.",
+   tip:"A chipped rim is not a mug. It is a bin item. Today.",
+   desc:"Most homes have 2-3x too many mugs. You know this.",
+   keep:["Mugs: max 2 per person plus 4 guest — 10 total for family of 4","Glasses: 6-8 everyday plus 4-6 wine or special","Plates: 6 everyday plus 4 guest","Chip equals bin — a chipped rim is unsafe and never used"],
+   steps:["Count mugs: be honest about how many you reach for","Check every glass and mug rim for chips — unsafe, bin them","Assess mismatched sets: do they bother you? If yes, edit to one style","Check for duplicate serving and salad bowls","Donate in good condition today — box them, door, done"]},
+
+  {room:"pantry",title:"Dry goods and grains",time:15,energy:"quick",
+   hint:"Date checking and consolidating — methodical.",
+   tip:"Mystery grain you bought once and never used — it will not get used.",
+   desc:"Open packets, expired legumes, three types of flour. Very common.",
+   keep:["Only dry goods your family actually eats regularly","One open packet per type — consolidate duplicates","Expired or mystery grains: let them go","Decant into jars to see quantities and reduce waste"],
+   steps:["Check every open dry goods packet for freshness","Discard expired and half-empty bags of forgotten grains","Consolidate: same items together, older stock in front","Decant into jars if you have them","Note what needs restocking — add to shopping list now"]},
+
+  {room:"pantry",title:"Cans, jars, and preserves",time:10,energy:"quick",
+   hint:"Fast date check. Very quick wins.",
+   tip:"Two cans of the same thing you never cook with — stop buying it.",
+   desc:"Quick check on tinned goods — dates, duplicates, good intentions.",
+   keep:["Cans you actually cook with: 2-3 of each staple","Past best-by by 1 year or more: gone","Homemade preserves: check seals and dates honestly","No more than 2 of any single item unless used weekly"],
+   steps:["Pull everything from the canned and preserved section","Check dates: significantly past best, let it go","Sort: tomatoes, beans, fish, sweet preserves","Rotate: oldest in front, newest at back","Note what stays unused — stop buying it"]},
+
+  {room:"pantry",title:"Bags, wraps, and kitchen paper",time:10,energy:"quick",
+   hint:"Very fast. The bag situation will feel absurd.",
+   tip:"You kept every single bag you were ever given. It is fine. Now edit.",
+   desc:"Reusable bags multiply everywhere. Time to consolidate.",
+   keep:["6-8 reusable shopping bags — not the 20 in a corner","1 roll each of cling wrap, baking paper, foil","One spot for all wrapping supplies — commit to it","Recycle excess bags at supermarket recycling"],
+   steps:["Gather ALL reusable bags from every corner of the kitchen","Keep 6-8 functional ones, recycle the rest","Organise: wraps and bags in one drawer or basket","Check for near-empty rolls to use before replacing","One spot for all wrapping supplies — label it if needed"]},
+
+  {room:"office",title:"Desk surfaces — first pass",time:20,energy:"focus",
+   hint:"Surface clearing before decisions. Good starting point.",
+   tip:"If it landed here by accident — it does not live here.",
+   desc:"Your office became a dumping ground. Surface layers first — no deep decisions yet.",
+   keep:["Only items used at your desk daily stay on the surface","Everything else: belongs elsewhere, needs filing, or can go","A clear desk is not empty — it has only what earns its place","If it landed here by accident, it does not stay"],
+   steps:["Go through everything on surfaces — not drawers yet","Four groups: belongs here, belongs elsewhere, bin, needs a decision","Return belongs-elsewhere items to their actual homes now","Fill a bag for donation with anything obvious","Clear the desk surface completely — notice how it feels"]},
+
+  {room:"office",title:"Stationery and desk drawer",time:15,energy:"quick",
+   hint:"The pen test is satisfying. Very doable.",
+   tip:"7 half-started notebooks is not inspiration. It is paralysis.",
+   desc:"The pen graveyard. Every desk has one.",
+   keep:["Pens that work: 3-5 is enough","1 notebook currently in use — not 7 half-started ones","Scissors, stapler, tape: 1 of each","Stationery you keep but never use is clutter"],
+   steps:["Empty the desk drawer completely","Test every pen and marker — no mercy for dead ones","Keep only stationery you actively use","Post-its, clips, rubber bands: one small container","Return with intent — if it does not belong in a desk, rehome it"]},
+
+  {room:"office",title:"Documents — purge round",time:30,energy:"deep",
+   hint:"Mentally heavy. Give yourself the full time.",
+   tip:"When in doubt with a document — photograph it, then discard the paper.",
+   desc:"Documents first pass: obvious keep vs obvious discard. No filing yet.",
+   keep:["Keep: tax documents last 5 years, insurance, contracts, medical records","Keep: active reference or upcoming deadline","Discard: old receipts, expired warranties, duplicate printouts","Shred anything with personal data — do not just recycle"],
+   steps:["Gather all documents from everywhere into one pile","Do not sort yet — identify obvious trash first","Separate clear discards: old receipts, outdated papers","Create a needs-decision folder for anything uncertain","Shred personal data before recycling"]},
+
+  {room:"office",title:"Documents — organise round",time:30,energy:"deep",
+   hint:"Do the purge first. Do not skip the order.",
+   tip:"One folder per category is enough. Complexity is the enemy of maintenance.",
+   desc:"Create a simple filing system for everything that survived the purge.",
+   keep:["Categories: Home, Finance, Health, Work, Kids, Car, Archive","Archive: old tax returns and legal docs rarely needed","Digital is fine: scan and discard paper where possible","One folder per category — no sub-sub-folders"],
+   steps:["Set up 6 folders: Home, Finance, Health, Work, Kids, Car","File everything from the needs-decision pile","Scan anything that could live digitally — use your phone","Archive folder for old tax records (5 years minimum)","Box or bag anything still waiting to be shredded"]},
+
+  {room:"living",title:"Surfaces and random object sweep",time:15,energy:"quick",
+   hint:"Identifying vs deciding — light mental load.",
+   tip:"If you stopped seeing it — it stopped earning its place.",
+   desc:"The living room accumulates daily life. What actually lives here?",
+   keep:["Only intentionally placed objects on surfaces","Remote controls: 1-2 maximum","Blankets: 1-2 folded neatly — not storage","Everything that landed here by accident: send it home"],
+   steps:["Walk through and pick up every single object","Does it belong here? Does it belong anywhere?","Return misplaced items to proper rooms","Collect obvious donations in a bag","Clear all surfaces completely — then choose what earns its spot back"]},
+
+  {room:"living",title:"TV shelf and cables",time:20,energy:"focus",
+   hint:"Cable chaos is universal. Satisfying to fix.",
+   tip:"A mystery cable with no known device is just clutter with potential.",
+   desc:"Cables, old remotes, forgotten tech, dusty objects around the TV.",
+   keep:["Only active devices on the shelf","Cables: one per device you own and use — no mystery cables","Remotes: one per device — test each works","Decorative items: max 3-4, chosen with intention"],
+   steps:["Pull everything from under and around the TV","Test each remote: which device? Does it work?","Remove broken or redundant tech — old modems, unused boxes","Cable tidy: label or bag cables per device","Dust everything before returning only what you intend to keep"]},
+
+  {room:"living",title:"Books, magazines, and decor",time:15,energy:"quick",
+   hint:"Fast on magazines, slower on decor and books.",
+   tip:"Decorative objects you stopped seeing stopped being decorative.",
+   desc:"The pile you are going to read, and objects that lost their meaning.",
+   keep:["Books: only planning to read soon — 10-15 on display max","Magazines: 2-3 current, recycle everything older","Candles: only ones you actually burn","Decor: edit to a considered few — empty space is beautiful too"],
+   steps:["Collect all magazines — recycle anything over 3 months old","Books: read and loved, reading soon, or let go","Candle stumps and unloved decor: donate or discard","Remaining objects: does each still bring you joy?","Less on surfaces equals calmer to live in — remove one more"]},
+
+  {room:"kids_play",title:"Big toys sort",time:30,energy:"deep",
+   hint:"Biggest physical and decision load in the playroom.",
+   tip:"A toy that never gets played with is not a backup toy. It is clutter.",
+   desc:"Big sorting session — the large, floor-space-taking toys first.",
+   keep:["Toys played with at least weekly","Large toys taking space but never used: let them go","Broken toys: straight to bin — broken toys teach frustration","Reduce to what fits storage comfortably with room to breathe"],
+   steps:["Spread big toys out so you can see everything","For each: when did a child last play with this? Be honest","Broken toys: bin immediately, no negotiation","Large unused items: donate or sell — most space, least joy","Return only what fits storage without cramming"]},
+
+  {room:"kids_play",title:"Small toys, figures, and sets",time:25,energy:"focus",
+   hint:"Count puzzle pieces. Be disciplined about incomplete sets.",
+   tip:"An incomplete puzzle does not get completed. It gets resented. Let it go.",
+   desc:"Puzzles with missing pieces, LEGO, small figures, single game pieces.",
+   keep:["Puzzles: complete ones only — ages 4-5 need 24-60 piece puzzles","LEGO: consolidate into 1-2 bins by type","Small figures: 20-30, not hundreds","Sets missing key pieces: let them go — incomplete = frustrating"],
+   steps:["Go through all small toys, sets, puzzle boxes","Check every puzzle: count pieces — incomplete ones go","Dried playdough? Bin. Missing-piece kits? Reassess","Sort into clear bins: blocks, figures, vehicles, art","Label bins with pictures or words — easier for the girls to tidy"]},
+
+  {room:"kids_play",title:"Playroom bookshelf",time:15,energy:"quick",
+   hint:"Coordinate with the kids room shelf to avoid duplication.",
+   tip:"Face-forward shelving at their height means they actually browse and choose.",
+   desc:"The second bookshelf — coordinate with the kids room to avoid duplication.",
+   keep:["10-12 books here, different from the bedroom shelf","Rotate books between rooms seasonally","Duplicates: one copy only, donate the other","Activity books: current age-appropriate only"],
+   steps:["Pull all books from this shelf","Compare with kids bedroom — remove duplicates","Playroom gets active books, bedroom gets bedtime stories","Donate outgrown or duplicate books — box for kindergarten","Arrange face-forward at the bottom shelves"]},
+
+  {room:"kids_play",title:"Art supplies and crafts",time:20,energy:"focus",
+   hint:"Test every marker. That part takes longer than expected.",
+   tip:"When art supplies are easy to reach, kids actually use them more.",
+   desc:"Dried felt tips, half-used glitter, random sticker sheets. The craft chaos.",
+   keep:["Markers: test each one — dried-out ones go, full stop","Crayons: one full set of 12-24, not 6 broken sets","Paper: one ream plain plus special paper they use","Paints: only usable open pots"],
+   steps:["Empty all craft storage onto a flat surface","Test every marker and pen — dried ones go, no exceptions","Discard broken crayons, empty glue sticks, dried paint","Keep functional pens, usable paints, paper, stickers kids use","Organise into one accessible caddy — easy access means more use"]},
+
+  {room:"dining",title:"Board games — adult drawer",time:20,energy:"focus",
+   hint:"Check completeness — a missing piece ruins the game.",
+   tip:"A game you liked but never play deserves to be played. Give it to someone who will.",
+   desc:"Your board game drawer. Edit by honest frequency.",
+   keep:["Only games played in the last 2 years","5-8 games: a curated collection over a drawer of maybe-someday","Each game must be complete: missing pieces devalue it","Games you liked but never play: gift or donate"],
+   steps:["Remove all games from the drawer","Each game: when did you last play it? Really?","Check completeness: open the box — all pieces present?","Over 2 years: gift, donate, or sell to a board game shop","Store neatly: most-played at front, occasional at back"]},
+
+  {room:"dining",title:"Board games — kids drawer",time:15,energy:"quick",
+   hint:"Age check is the key filter — they grow out of games fast.",
+   tip:"A game too easy for them is not a backup. It is frustration waiting to happen.",
+   desc:"Kids outgrow games fast. Ages 4 and 5 need different games than 2 and 3.",
+   keep:["5-8 games appropriate for ages 4-5 right now","Games for under 3: donate — too easy now","Each game must be complete — missing pieces = impossible","Favourites they ask for: definitely keep"],
+   steps:["Pull all kids games out","Is it age-appropriate for a 4 and 5 year old today?","Donate anything too young — another family will love it","Check completeness: open each game, confirm all pieces","Keep 5-8 they genuinely enjoy and ask to play"]},
+
+  {room:"dining",title:"Table linens and dining extras",time:10,energy:"quick",
+   hint:"Very fast. Count and condition only.",
+   tip:"Tablecloths you keep because they were expensive but never use — let them go.",
+   desc:"Candles, tablecloths, random things that landed in the dining room.",
+   keep:["Tablecloths: 1-2 you actually like and use","Table runners: 1-2 maximum","Candles: only ones you actually light","Placemats: one set of 4-6, matching, good condition"],
+   steps:["Check all table linens: stained, faded, or never used — let them go","Keep only what you actively like","Candles barely burned and never lit: donate or let go","Collect random items that landed here and return them home","Clear the dining surface completely"]},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+var KEY = "clearHome_v3";
+function loadState() {
+  try { var r = localStorage.getItem(KEY); if (r) return JSON.parse(r); } catch(e){}
+  return {done:{}, steps:{}, customTime:{}, bags:0};
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+var state = loadState();
+
+var filterTime = 999;
+var filterRoom = "all";
+var doneOpen = false;
+var activeTaskIdx = null;
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+buildFilterBar();
+renderGrid();
+updateHeader();
+
+function getTime(idx) {
+  return (state.customTime && state.customTime[idx] != null) ? state.customTime[idx] : TASKS[idx].time;
+}
+
+function effortLabel(e) {
+  if (e === "quick") return {cls:"effort-quick", txt:"Quick win"};
+  if (e === "focus") return {cls:"effort-focus", txt:"Focused"};
+  return {cls:"effort-deep", txt:"Deep dive"};
+}
+
+// ── FILTER BAR ────────────────────────────────────────────────────────────────
+function buildFilterBar() {
+  var bar = document.getElementById("filterBar");
+  var timeOptions = [
+    {max:10, label:"10 min"},
+    {max:15, label:"15 min"},
+    {max:20, label:"20 min"},
+    {max:30, label:"30 min"},
+    {max:999, label:"Any time"},
+  ];
+  var html = "";
+  timeOptions.forEach(function(o) {
+    var active = o.max === 999 ? "time-active" : "";
+    html += '<button class="fb-btn ' + active + '" data-max="' + o.max + '" data-type="time" onclick="setTimeFilter(this)">' + o.label + '</button>';
+  });
+  html += '<div class="fb-divider"></div>';
+  html += '<button class="fb-btn active" data-room="all" data-type="room" onclick="setRoomFilter(this)">All rooms</button>';
+  ROOMS.forEach(function(r) {
+    html += '<button class="fb-btn" data-room="' + r.id + '" data-type="room" onclick="setRoomFilter(this)">' + r.icon + ' ' + r.name + '</button>';
+  });
+  bar.innerHTML = html;
+  // set Any time active
+  var timeBtns = bar.querySelectorAll('[data-type="time"]');
+  timeBtns[timeBtns.length-1].classList.add("time-active");
+}
+
+function setTimeFilter(btn) {
+  document.querySelectorAll('[data-type="time"]').forEach(function(b){b.classList.remove("time-active");});
+  btn.classList.add("time-active");
+  filterTime = parseInt(btn.dataset.max);
+  renderGrid();
+}
+
+function setRoomFilter(btn) {
+  document.querySelectorAll('[data-type="room"]').forEach(function(b){b.classList.remove("active");});
+  btn.classList.add("active");
+  filterRoom = btn.dataset.room;
+  renderGrid();
+}
+
+// ── GRID ─────────────────────────────────────────────────────────────────────
+function renderGrid() {
+  var grid = document.getElementById("taskGrid");
+  var doneGrid = document.getElementById("doneGrid");
+  var doneSection = document.getElementById("doneSection");
+  var label = document.getElementById("resultsLabel");
+
+  var remaining = [];
+  var doneItems = [];
+
+  for (var i = 0; i < TASKS.length; i++) {
+    var t = TASKS[i];
+    var effectiveTime = getTime(i);
+    var roomOk = filterRoom === "all" || t.room === filterRoom;
+    var timeOk = effectiveTime <= filterTime;
+    if (!roomOk || !timeOk) continue;
+    if (state.done[i]) doneItems.push({t:t,i:i});
+    else remaining.push({t:t,i:i});
+  }
+
+  // label
+  var totalFiltered = remaining.length + doneItems.length;
+  if (filterTime < 999) {
+    label.textContent = remaining.length + " task" + (remaining.length !== 1 ? "s" : "") + " within " + filterTime + " min";
+  } else if (filterRoom !== "all") {
+    label.textContent = remaining.length + " remaining in this room";
+  } else {
+    label.textContent = remaining.length + " remaining";
+  }
+
+  // all done in current filter
+  if (totalFiltered > 0 && remaining.length === 0) {
+    var roomName = filterRoom === "all" ? "everything in this view" : ROOMS.find(function(r){return r.id===filterRoom;}).name;
+    grid.innerHTML = '<div class="all-done-banner" style="grid-column:1/-1">' +
+      '<div class="adb-emoji">&#x1F33F;</div>' +
+      '<div class="adb-title">All clear!</div>' +
+      '<div class="adb-sub">You have completed ' + roomName + '.<br>Choose a different filter to find more tasks, or enjoy the calm.</div>' +
+      '</div>';
+  } else if (totalFiltered === 0) {
+    grid.innerHTML = '<div class="no-tasks" style="grid-column:1/-1"><div class="nt-icon">&#x1F50D;</div>No tasks match this filter.<div class="nt-sub">Try a longer time or a different room.</div></div>';
+  } else {
+    grid.innerHTML = remaining.map(function(item){return cardHtml(item, false);}).join("");
+  }
+
+  // done section
+  if (doneItems.length > 0) {
+    doneSection.style.display = "block";
+    document.getElementById("doneSection").querySelector(".slabel").textContent = doneItems.length + " completed";
+    if (doneOpen) {
+      doneGrid.innerHTML = doneItems.map(function(item){return cardHtml(item, true);}).join("");
+    } else {
+      doneGrid.innerHTML = "";
+    }
+  } else {
+    doneSection.style.display = "none";
+  }
+}
+
+function cardHtml(item, isDone) {
+  var t = item.t; var idx = item.i;
+  var ri = ROOMS.find(function(r){return r.id === t.room;}) || ROOMS[0];
+  var displayTime = getTime(idx);
+  var timeEdited = state.customTime && state.customTime[idx] != null && state.customTime[idx] !== t.time;
+  var eff = effortLabel(t.energy);
+  var stepsDone = (state.steps[idx] || []).length;
+  var totalSteps = t.steps.length;
+  var hasProgress = stepsDone > 0 && !isDone;
+
+  return '<div class="tcard' + (isDone ? " done-card" : "") + '" onclick="openTask(' + idx + ')">' +
+    '<div class="tcard-effort ' + eff.cls + '">' + eff.txt + '</div>' +
+    '<div class="tcard-icon">' + ri.icon + '</div>' +
+    '<div class="tcard-room">' + ri.name + '</div>' +
+    '<div class="tcard-title">' + t.title + '</div>' +
+    (hasProgress ? '<div class="tcard-hint">&#x25CF; ' + stepsDone + '/' + totalSteps + ' steps done</div>' : '') +
+    '<div class="tcard-bottom">' +
+    '<span class="tcard-time' + (timeEdited ? " edited" : "") + '">&#x23F1; ' + displayTime + ' min</span>' +
+    '<span style="font-size:11px;color:var(--lav)">&#x2736; ' + t.keep.length + ' rules</span>' +
+    '</div></div>';
+}
+
+function toggleDone() {
+  doneOpen = !doneOpen;
+  document.getElementById("doneToggleIcon").classList.toggle("open", doneOpen);
+  renderGrid();
+}
+
+// ── HEADER ────────────────────────────────────────────────────────────────────
+function updateHeader() {
+  var total = TASKS.length;
+  var doneCount = Object.keys(state.done).length;
+  var pct = Math.round((doneCount / total) * 100);
+  document.getElementById("progPill").textContent = doneCount + " / " + total;
+  document.getElementById("progFill").style.width = pct + "%";
+  document.getElementById("bagsCount").textContent = state.bags || 0;
+  document.getElementById("bagsNum").textContent = state.bags || 0;
+}
+
+// ── TASK SHEET ────────────────────────────────────────────────────────────────
+function openTask(idx) {
+  activeTaskIdx = idx;
+  renderSheet(idx);
+  document.getElementById("detailOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function renderSheet(idx) {
+  var t = TASKS[idx];
+  var ri = ROOMS.find(function(r){return r.id === t.room;}) || ROOMS[0];
+  var stepsDone = state.steps[idx] || [];
+  var allStepsDone = stepsDone.length >= t.steps.length;
+  var isDone = !!state.done[idx];
+  var customTime = getTime(idx);
+  var eff = effortLabel(t.energy);
+
+  var keepHtml = t.keep.map(function(k){
+    return '<div class="keep-item">' + k + '</div>';
+  }).join("");
+
+  var stepsHtml = t.steps.map(function(s,i){
+    var done = stepsDone.indexOf(i) > -1;
+    return '<li class="' + (done ? "sdone" : "") + '" onclick="toggleStep(' + idx + ',' + i + ')">' +
+      '<div class="scheck">' + (done ? "&#x2713;" : "") + '</div><span>' + s + '</span></li>';
+  }).join("");
+
+  var actionHtml;
+  if (isDone) {
+    actionHtml = '<div style="background:var(--sage-p);border:1.5px solid var(--sage-l);border-radius:14px;padding:14px 18px;text-align:center;font-size:13px;color:var(--sage);margin-bottom:8px;">&#x2713; Completed</div>';
+  } else if (allStepsDone) {
+    actionHtml = '<button class="btn-complete" onclick="markDone(' + idx + ')">Mark as complete &#x2713;</button>';
+  } else {
+    var doneCount = stepsDone.length;
+    var partialNote = doneCount > 0
+      ? '<button class="btn-anyway" onclick="markDone(' + idx + ')">Mark complete anyway (' + doneCount + '/' + t.steps.length + ' steps done)</button>'
+      : '';
+    actionHtml = '<button class="btn-complete" disabled>Tick steps above to complete</button>' + partialNote;
+  }
+
+  document.getElementById("sheetContent").innerHTML =
+    '<div class="sheet-header">' +
+      '<div class="sheet-header-left">' +
+        '<div class="sheet-room-row">' +
+          '<span>' + ri.icon + '</span>' +
+          '<span>' + ri.name + '</span>' +
+          '<span style="background:' + (t.energy==="quick"?"#EDF0EB":t.energy==="focus"?"#F2F0F8":"#F8F1E6") + ';color:' + (t.energy==="quick"?"#7A9E73":t.energy==="focus"?"#9089BA":"#B08A50") + ';padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500">' + eff.txt + '</span>' +
+        '</div>' +
+        '<div class="sheet-title">' + t.title + '</div>' +
+      '</div>' +
+      '<div class="time-editor">' +
+        '<div class="time-editor-label">Your time</div>' +
+        '<div class="time-editor-val">' + customTime + '</div>' +
+        '<div class="time-editor-unit">minutes</div>' +
+        '<div class="time-editor-btns">' +
+          '<button onclick="adjustTime(' + idx + ',-5)">&#8722;</button>' +
+          '<button onclick="adjustTime(' + idx + ',5)">&#43;</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="sheet-desc">' + t.desc + '</div>' +
+    '<div class="keep-box"><div class="keep-box-label">How much to keep</div><div class="keep-items">' + keepHtml + '</div></div>' +
+    '<div class="hesitation-tip"><strong>If you are hesitating</strong>' + t.tip + '</div>' +
+    '<div class="sheet-steps-label">Steps</div><ul class="sheet-steps">' + stepsHtml + '</ul>' +
+    actionHtml +
+    '<button class="btn-close" onclick="closeDetail()">Close</button>';
+}
+
+function toggleStep(taskIdx, stepIdx) {
+  if (!state.steps[taskIdx]) state.steps[taskIdx] = [];
+  var arr = state.steps[taskIdx];
+  var pos = arr.indexOf(stepIdx);
+  if (pos > -1) arr.splice(pos,1); else arr.push(stepIdx);
+  save();
+  renderSheet(taskIdx);
+}
+
+function adjustTime(idx, delta) {
+  if (!state.customTime) state.customTime = {};
+  var current = getTime(idx);
+  state.customTime[idx] = Math.max(5, current + delta);
+  save();
+  renderSheet(idx);
+  renderGrid();
+}
+
+function markDone(idx) {
+  state.done[idx] = new Date().toISOString();
+  delete state.steps[idx];
+  save();
+  closeDetail();
+  updateHeader();
+  renderGrid();
+  showCel();
+}
+
+function closeDetail() {
+  document.getElementById("detailOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+  activeTaskIdx = null;
+}
+
+function maybeCloseDetail(e) {
+  if (e.target === document.getElementById("detailOverlay")) closeDetail();
+}
+
+// ── BAGS ─────────────────────────────────────────────────────────────────────
+function openBags() {
+  document.getElementById("bagsNum").textContent = state.bags || 0;
+  document.getElementById("bagsOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeBags() {
+  document.getElementById("bagsOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+function maybeCloseBags(e) {
+  if (e.target === document.getElementById("bagsOverlay")) closeBags();
+}
+function addBags(delta) {
+  state.bags = Math.max(0, (state.bags || 0) + delta);
+  save();
+  document.getElementById("bagsNum").textContent = state.bags;
+  document.getElementById("bagsCount").textContent = state.bags;
+}
+
+// ── CELEBRATION ───────────────────────────────────────────────────────────────
+var MSGS = [
+  {e:"&#x1F33F;",t:"Beautifully done.",s:"One area lighter. Your home breathes a little easier."},
+  {e:"&#x2728;",t:"That is progress.",s:"Small steps, consistently — that is how a home transforms."},
+  {e:"&#x1F54A;&#xFE0F;",t:"Space cleared.",s:"What you let go of creates room for what matters most."},
+  {e:"&#x1F338;",t:"Wonderful!",s:"Your home is becoming calmer with every session."},
+  {e:"&#x1FAF6;",t:"Done with care.",s:"This is an act of love for your home and your family."},
+  {e:"&#x1F343;",t:"Lighter.",s:"Every bag out the door is a decision made permanent."},
+];
+function showCel() {
+  var m = MSGS[Math.floor(Math.random()*MSGS.length)];
+  document.getElementById("celEmoji").innerHTML = m.e;
+  document.getElementById("celTitle").textContent = m.t;
+  document.getElementById("celSub").textContent = m.s;
+  document.getElementById("celOverlay").classList.add("show");
+}
+function closeCel() { document.getElementById("celOverlay").classList.remove("show"); }
+
+// ── ROOMS VIEW ────────────────────────────────────────────────────────────────
+function renderRooms() {
+  var list = document.getElementById("roomsList");
+  list.innerHTML = ROOMS.map(function(room) {
+    var indices = [];
+    for (var i=0; i<TASKS.length; i++) { if (TASKS[i].room === room.id) indices.push(i); }
+    var doneCount = indices.filter(function(i){return !!state.done[i];}).length;
+    var total = indices.length;
+    var pct = total ? Math.round((doneCount/total)*100) : 0;
+    var R=16, circ=2*Math.PI*R, dash=(pct/100)*circ;
+    var allDone = doneCount === total;
+    return '<div class="rcard" onclick="jumpToRoom(\'' + room.id + '\')" style="' + (allDone?"opacity:.6":"") + '">' +
+      '<div class="rcard-icon">' + room.icon + '</div>' +
+      '<div class="rcard-info">' +
+        '<div class="rcard-name">' + room.name + '</div>' +
+        '<div class="rcard-sub">' + doneCount + ' of ' + total + ' tasks done' + (allDone ? ' &#x2713;' : '') + '</div>' +
+      '</div>' +
+      '<div class="rcard-ring"><svg width="40" height="40" viewBox="0 0 40 40">' +
+        '<circle cx="20" cy="20" r="' + R + '" fill="none" stroke="' + room.color + '" stroke-width="4"/>' +
+        '<circle cx="20" cy="20" r="' + R + '" fill="none" stroke="' + room.stroke + '" stroke-width="4" stroke-dasharray="' + dash.toFixed(1) + ' ' + circ.toFixed(1) + '" stroke-linecap="round"/>' +
+      '</svg><div class="rcard-pct">' + pct + '%</div></div></div>';
+  }).join("");
+}
+
+function jumpToRoom(roomId) {
+  document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("active",v.id==="viewPick");});
+  document.querySelectorAll(".nav-btn").forEach(function(b){b.classList.toggle("active",b.dataset.view==="viewPick");});
+  filterRoom = roomId;
+  document.querySelectorAll('[data-type="room"]').forEach(function(b){b.classList.toggle("active",b.dataset.room===roomId);});
+  renderGrid();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function switchView(btn) {
+  var viewId = btn.dataset.view;
+  document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("active",v.id===viewId);});
+  document.querySelectorAll(".nav-btn").forEach(function(b){b.classList.toggle("active",b===btn);});
+  if (viewId === "viewRooms") renderRooms();
+}
+</script>
+</body>
+</html>
